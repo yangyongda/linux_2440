@@ -185,8 +185,16 @@
 #define CONFIG_SYS_FLASH_ERASE_TOUT	(5*CONFIG_SYS_HZ) /* Timeout for Flash Erase */
 #define CONFIG_SYS_FLASH_WRITE_TOUT	(5*CONFIG_SYS_HZ) /* Timeout for Flash Write */
 
-#define	CONFIG_ENV_IS_IN_FLASH	1
+#define CONFIG_ENV_IS_IN_NAND 1	//common目录Makefile，连接时要用
+#define CONFIG_ENV_OFFSET 0x100000
 #define CONFIG_ENV_SIZE		0x20000	/* Total Size of Environment Sector */
-#define CONFIG_ENV_OFFSET 	0x100000
+
+/*NAND flash settings*/ 
+#define CONFIG_CMD_NAND
+#if defined(CONFIG_CMD_NAND)
+#define CONFIG_NAND_S3C2440
+#define CONFIG_SYS_NAND_BASE 0x4E000000 //Nand配置寄存器基地址，nand.c要用到
+#define CONFIG_SYS_MAX_NAND_DEVICE 1 //nand个数，nand.c要用到
+#endif
 
 #endif	/* __CONFIG_H */
