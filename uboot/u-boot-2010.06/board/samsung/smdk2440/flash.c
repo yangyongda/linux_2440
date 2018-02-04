@@ -71,6 +71,9 @@ ulong flash_init (void)
 #elif defined(CONFIG_AMD_LV800)
 			(AMD_MANUFACT & FLASH_VENDMASK) |
 			(AMD_ID_LV800B & FLASH_TYPEMASK);
+#elif defined(CONFIG_AMD_LV160)
+			(AMD_MANUFACT & FLASH_VENDMASK) | 
+			(AMD_ID_LV160B & FLASH_TYPEMASK);
 #else
 #error "Unknown flash configured"
 #endif
@@ -144,6 +147,9 @@ void flash_print_info (flash_info_t * info)
 	case (AMD_ID_LV800B & FLASH_TYPEMASK):
 		printf ("1x Amd29LV800BB (8Mbit)\n");
 		break;
+	case (AMD_ID_LV160B & FLASH_TYPEMASK): 
+		printf ("1x Amd29LV160B (2M)\n"); 
+	break;
 	default:
 		printf ("Unknown Chip Type\n");
 		goto Done;
