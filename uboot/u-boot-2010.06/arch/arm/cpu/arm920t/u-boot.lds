@@ -41,6 +41,7 @@ SECTIONS
 	{
 		arch/arm/cpu/arm920t/start.o	(.text)
 		board/samsung/smdk2440/lowlevel_init.o (.text)
+		board/samsung/smdk2440/nand_read.o (.text)
 		*(.text)
 	}
 

@@ -87,6 +87,11 @@ _bss_start:
 .globl _bss_end
 _bss_end:
 	.word _end
+	
+.globl BootFlag  
+BootFlag:    /* BootFlag为0表示NAND启动，1表示NOR启动，默认为0*/
+	.word 0
+
 
 #ifdef CONFIG_USE_IRQ
 /* IRQ stack memory (calculated at run-time) */
@@ -114,8 +119,8 @@ start_code:
 	orr	r0, r0, #0xd3
 	msr	cpsr, r0
 
-	bl	coloured_LED_init
-	bl	red_LED_on
+	/*bl	coloured_LED_init
+	bl	red_LED_on */
 
 #if	defined(CONFIG_AT91RM9200DK) || defined(CONFIG_AT91RM9200EK)
 	/*
@@ -143,7 +148,7 @@ copyex:
 #  define INTMSK	0x4A000008	/* Interupt-Controller base addresses */
 #  define INTSUBMSK	0x4A00001C
 #  define CLKDIVN	0x4C000014	/* clock divisor register */
-#  define MPLLCON 	0x4C000004
+# 	define MPLLCON 0x4C000004   /* S3C2440寄存器 */
 # endif
 
 	ldr	r0, =pWTCON
@@ -161,24 +166,34 @@ copyex:
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
 # endif
-# if defined(CONFIG_S3C2440) 
-ldr r1, =0x7fff 
-ldr r0, =INTSUBMSK 
-str r1, [r0] 
-# endif
 
-/* FCLK:HCLK:PCLK = 1:4:8 UCLK = UPLL*/
-ldr r0, =CLKDIVN
-mov r1, #5
-str r1, [r0]
+# if defined(CONFIG_S3C2440)  /*关闭中断,CONFIG_S3C2440在100ask24x0.h中定义*/
+	ldr r1, =0x7fff   
+	ldr r0, =INTSUBMSK  
+	str r1, [r0]  
+# endif 
 
-mrc p15, 0, r1, c1, c0, 0
-orr r1, r1, #0xc0000000
-mcr p15, 0, r1, c1, c0, 0
+/*屏蔽2410时钟设置*/
+#if 0
+	/* FCLK:HCLK:PCLK = 1:2:4 */
+	/* default FCLK is 120 MHz ! */
+	ldr	r0, =CLKDIVN
+	mov	r1, #3
+	str	r1, [r0]
+#endif
 
-ldr r1, =MPLLCON
-ldr r2, =0x5c011
-str r2, [r1] @400mhz
+/* S3C2440
+FCLK:HCLK:PCLK = 1:4:8 UCLK = UPLL
+*/ 
+ldr r0, =CLKDIVN 
+mov r1, #5 
+str r1, [r0]   
+mrc p15, 0, r1, c1, c0, 0 
+orr r1, r1, #0xc0000000 
+mcr p15, 0, r1, c1, c0, 0   
+ldr r1, =MPLLCON 
+ldr r2, =0x5c011 
+str r2, [r1] 							@400mhz
 
 #endif	/* CONFIG_S3C24X0 */
 
@@ -196,7 +211,105 @@ relocate:				/* relocate U-Boot to RAM	    */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
 	cmp	r0, r1			/* don't reloc during debug         */
 	beq	stack_setup
+	
+/***************** CHECK_BOOT_FLASH **************************************/
+	ldr r1, =0x4000003C	/* address of Internal SRAM 0x4000003C*/
+	mov r0, #0 				/* r0 = 0 */
+	str r0, [r1]      /* 将0写入0x4000003c地址*/
+	mov r1, #0x3c 			/* address of 0x0000003C*/
+	ldr r0, [r1]       /* 读0x0000003C的值，因为如果是NAND启动，0x4000003c地址的内容会和0x0000003C地址一样，NAND启动会把前4k拷贝到SRAM(内部RAM)*/
+	cmp r0, #0 				/*判断0x0000003C所指向的4个字节是否被清0*/
+	bne norboot 			/*没有被清0，就是在Nor Flash中启动，则跳到Nor Flash的启动代码处norboot*/
+/***************** CHECK_BOOT_FLASH *********************************/
+	
+/***************** NAND_BOOT *************************************************/
+nandboot:
+	/* recovery */
+	ldr r0, =0xdeadbeef 	/*被清0,就是在Nand Flash中启动*/
+	ldr r1, =0x4000003C 	/*恢复0x4000003C指向的4字节的数据0xdeadbeef*/
+	str r0, [r1]
+#define LENGTH_UBOOT 0x100000
+#define NAND_CTL_BASE 0x4E000000
+#ifdef CONFIG_S3C2440
+	/* Offset */
+#define oNFCONF 0x00
+#define oNFCONT 0x04
+#define oNFCMD 0x08
+#define oNFSTAT 0x20
+	@ reset NAND
+	mov r1, #NAND_CTL_BASE    /* 下面语句用于初始化NAND寄存器*/
+	ldr r2, =( (2<<12)|(1<<8)|(0<<4)|(0<<0) )
+	str r2, [r1, #oNFCONF]
+	ldr r2, [r1, #oNFCONF]
+	ldr r2, =( (1<<4)|(0<<1)|(1<<0) ) @ Active low CE Control
+	str r2, [r1, #oNFCONT]
+	ldr r2, [r1, #oNFCONT]
+	ldr r2, =(0x6) @ RnB Clear
+	str r2, [r1, #oNFSTAT]
+	ldr r2, [r1, #oNFSTAT]
+	mov r2, #0xff @ RESET command
+	strb r2, [r1, #oNFCMD]
+	mov r3, #0 @ wait
+	
+nand1:    /* 延时 */
+	add r3, r3, #0x1
+	cmp r3, #0xa
+	blt nand1
+	
+nand2:
+	ldr r2, [r1, #oNFSTAT] @ wait ready
+	tst r2, #0x4      /* 判断NFSTAT寄存器第三位的状态 */
+	beq nand2
+	
+	ldr r2, [r1, #oNFCONT]
+	orr r2, r2, #0x2 @ Flash Memory Chip Disable
+	str r2, [r1, #oNFCONT]
+	
+	@ get read to call C functions (for nand_read())
+	ldr sp, DW_STACK_START @ setup stack pointer
+	mov fp, #0 @ no previous frame, so fp=0
+	
+	@ copy U-Boot to RAM
+	ldr r0, =TEXT_BASE
+	mov r1, #0x0
+	mov r2, #LENGTH_UBOOT
+	bl nand_read_ll
+	tst r0, #0x0
+	beq ok_nand_read
+	
+bad_nand_read:
+loop2:
+	b loop2 @ infinite loop
+	
+ok_nand_read:
+	@ verify
+	mov r0, #0
+	ldr r1, =TEXT_BASE
+	mov r2, #0x400 @ 4 bytes * 1024 = 4K-bytes
+go_next:
+	ldr r3, [r0], #4
+	ldr r4, [r1], #4
+	teq r3, r4
+	bne notmatch
+	subs r2, r2, #4
+	beq stack_setup
+	bne go_next
+notmatch:
+loop3:
+	b loop3 @ infinite loop 死循环
+	#endif
+/***************** NAND_BOOT *************************************************/
 
+/***************** NOR_BOOT *************************************************/
+norboot: 		
+/*********** CHECK_FOR_MAGIC_NUMBER***************/
+	ldr r1, =0xdeadbeef
+	cmp r0, r1
+	bne loop3  /* 不相等进入死循环*/
+/*********** CHECK_FOR_MAGIC_NUMBER***************/
+
+	adr r0, _start 			/* r0 <- current position of code */
+	ldr r1, _TEXT_BASE 		/* test if we run from flash or RAM */
 	ldr	r2, _armboot_start
 	ldr	r3, _bss_start
 	sub	r2, r3, r2		/* r2 <- size of armboot            */
@@ -207,6 +320,12 @@ copy_loop:
 	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
 	cmp	r0, r2			/* until source end addreee [r2]    */
 	ble	copy_loop
+	
+SetBootFlag:
+	ldr r0, =BootFlag
+	mov r1, #1 /*从Nor启动，将标志设置为1*/
+	str r1, [r0]
+
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
 
 	/* Set up the stack						    */
@@ -233,6 +352,12 @@ clbss_l:str	r2, [r0]		/* clear loop...                    */
 	ldr	pc, _start_armboot
 
 _start_armboot:	.word start_armboot
+
+/*添加nandboot中DW_STACK_START的定义*/
+#define STACK_BASE 0x33f00000
+#define STACK_SIZE 0x10000
+	.align	2
+DW_STACK_START:	.word	STACK_BASE+STACK_SIZE-4
 
 
 /*
@@ -421,10 +546,14 @@ not_used:
 
 	.align	5
 irq:
-	get_irq_stack
-	irq_save_user_regs
-	bl	do_irq
-	irq_restore_user_regs
+	/* use IRQ for USB and DMA */ 
+	sub lr, lr, #4		@ the return address 
+	ldr sp, IRQ_STACK_START	 @ the stack for irq 
+	stmdb sp!, { r0-r12,lr }		 @ save registers 
+	ldr lr, =int_return			@ set the return addr
+	ldr pc, =IRQ_Handle		@ call the isr 
+	int_return: 
+	ldmia sp!, { r0-r12,pc }^		 @ return from interrupt
 
 	.align	5
 fiq:
