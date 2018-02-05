@@ -341,6 +341,14 @@ static int dm9000_init(struct eth_device *dev, bd_t *bd)
 	/* Clear interrupt status */
 	DM9000_iow(DM9000_ISR, ISR_ROOS | ISR_ROS | ISR_PTS | ISR_PRS);
 
+	char *tmp = getenv("ethaddr"); 
+	char *end; 
+	for(i = 0;i < 6; i++) 
+	{ 
+	dev->enetaddr[i] = tmp ? simple_strtoul(tmp, &end, 16) : 0; 
+	if(tmp) 
+	tmp = (*end)? end + 1 :end; 
+	}
 	printf("MAC: %pM\n", dev->enetaddr);
 
 	/* fill device MAC address registers */
