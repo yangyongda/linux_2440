@@ -346,6 +346,18 @@ void main_loop (void)
 	install_auto_complete();
 #endif
 
+#ifdef CONFIG_CMD_MTDPARTS 
+extern int mtdparts_init(void); 
+if (!getenv("mtdparts")) 
+{ 
+run_command("mtdparts default", 0); 
+}
+else
+{ 
+mtdparts_init(); 
+} 
+#endif
+
 #ifdef CONFIG_PREBOOT
 	if ((p = getenv ("preboot")) != NULL) {
 # ifdef CONFIG_AUTOBOOT_KEYED

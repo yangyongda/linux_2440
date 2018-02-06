@@ -104,6 +104,17 @@
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_PING//来自cmd_net.c
 
+/* MTDPARTS settings */
+#define CONFIG_CMD_MTDPARTS 1
+#define CONFIG_MTD_DEVICE 1 
+#define CONFIG_MTD_PARTITIONS  1
+#define MTDIDS_DEFAULT "nand0=nandflash0" 
+#define MTDPARTS_DEFAULT	"mtdparts=nandflash0:1m@0(bootloader),"\
+				"128k(params),"\
+				"4m(kernel),"\
+				"-(root)"
+
+
 #define CONFIG_BOOTDELAY	3
 /*#define CONFIG_BOOTARGS	"root=ramfs devfs=mount console=ttySA0,9600" */
 #define CONFIG_ETHADDR	08:00:3e:26:0a:5b 
