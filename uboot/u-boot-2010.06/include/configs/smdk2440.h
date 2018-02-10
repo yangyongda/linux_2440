@@ -221,4 +221,8 @@
 #define CONFIG_SYS_MAX_NAND_DEVICE 1 //nand个数，nand.c要用到
 #endif
 
+/* YAFFS */
+#define ENABLE_CMD_NAND_YAFFS 1 
+#define ENABLE_CMD_NAND_YAFFS_SKIPFB 1
+
 #endif	/* __CONFIG_H */

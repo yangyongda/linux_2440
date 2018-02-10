@@ -111,6 +111,8 @@ struct mtd_oob_ops {
 };
 
 struct mtd_info {
+	u_char rw_oob; 
+	u_char skipfirstblk;
 	u_char type;
 	u_int32_t flags;
 	uint64_t size;	 /* Total size of the MTD */

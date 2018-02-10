@@ -384,6 +384,25 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 			else
 				ret = nand_write_skip_bad(nand, off, &size,
 							  (u_char *)addr);
+#if defined(ENABLE_CMD_NAND_YAFFS) 
+		}else if ( s != NULL && (!strcmp(s, ".yaffs") || !strcmp(s, ".yaffs2"))){ 
+			if(read) { 
+			printf("nand read.yaffs[2] is not provide temporarily!"); 
+			} else { 
+				nand->rw_oob = 1; 
+#if defined(ENABLE_CMD_NAND_YAFFS_SKIPFB) 
+				nand->skipfirstblk = 1; 
+#else 
+				nand->skipfirstblk = 0; 
+#endif 
+				ret = nand_write_skip_bad(nand,off,&size,(u_char *)addr); 
+#if defined(ENABLE_CMD_NAND_YAFFS_SKIPFB) 
+				nand->skipfirstblk = 0; 
+#endif 
+				nand->rw_oob = 0; 
+			} 
+#endif
+
 		} else if (!strcmp(s, ".oob")) {
 			/* out-of-band data */
 			mtd_oob_ops_t ops = {
@@ -502,6 +521,13 @@ U_BOOT_CMD(nand, CONFIG_SYS_MAXARGS, 1, do_nand,
 	"    bring nand to lock state or display locked pages\n"
 	"nand unlock [offset] [size] - unlock section"
 #endif
+
+#if defined(ENABLE_CMD_NAND_YAFFS) 
+"nand read[.yaffs[2]] is not provide temporarily!\n" 
+"nand write[.yaffs[2]] addr off size - write the 'size' byte yaffs image starting\n" 
+"     at offset 'off' from memory address 'addr' (.yaffs2 for 2048 + 16 NAND)\n"
+#endif
+
 );
 
 static int nand_load_image(cmd_tbl_t *cmdtp, nand_info_t *nand,
