@@ -51,7 +51,6 @@
  */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 128*1024)
 #define CONFIG_SYS_GBL_DATA_SIZE	128	/* size in bytes reserved for initial data */
-
 /*
  * Hardware drivers
  */
@@ -116,6 +115,7 @@
 
 
 #define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTARGS "noinitrd root=/dev/mtdblock3 init=/linuxrc console=ttySAC0,115200 mem=64M" 
 /*#define CONFIG_BOOTARGS	"root=ramfs devfs=mount console=ttySA0,9600" */
 #define CONFIG_ETHADDR	08:00:3e:26:0a:5b 
 #define CONFIG_NETMASK          255.255.255.0
@@ -123,6 +123,11 @@
 #define CONFIG_SERVERIP		192.168.1.30
 /*#define CONFIG_BOOTFILE	"elinos-lart" */
 /*#define CONFIG_BOOTCOMMAND	"tftp; bootm" */
+#define CONFIG_BOOTCOMMAND "nand read 0x30008000 kernel; bootm 0x30008000"
+
+#define CONFIG_SETUP_MEMORY_TAGS	1
+#define CONFIG_INITRD_TAG		1
+#define CONFIG_CMDLINE_TAG		1
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	115200		/* speed to run kgdb serial port */
