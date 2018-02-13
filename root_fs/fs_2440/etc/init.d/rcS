@@ -1,0 +1,11 @@
+#!/bin/sh 
+ifconfig lo 127.0.0.1 
+ifconfig eth0 192.168.1.17 
+route add default gw 192.168.1.1 
+mount -a
+mkdir /dev/pts
+mount -t devpts devpts /dev/pts
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+mdev -s
+ifconfig eth0 down
+ifconfig eth0 up
