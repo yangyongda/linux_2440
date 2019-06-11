@@ -26,3 +26,7 @@ nand erase root
 nand write.yaffs 30000000 0x00520000 $(filesize)
 
 
+## 格式化nand flash
+
+nand scrub
+
