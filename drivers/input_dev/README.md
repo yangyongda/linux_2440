@@ -1,7 +1,7 @@
 # 输入子系统驱动程序测试
 hexdump /dev/input/event0
 
-省略       秒        微秒    类   code   value
+省略		秒	微秒	类   code   value
 
 0000000 00ac 0000 b539 0007 0001 0026 0001 0000
 
