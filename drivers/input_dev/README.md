@@ -1,7 +1,7 @@
 # 输入子系统驱动程序测试
-hexdump /dev/input/event0
+输入命令hexdump /dev/input/event0
 
-省略		秒	微秒	类   code   value
+省略       秒        微秒    类   code   value
 
 0000000 00ac 0000 b539 0007 0001 0026 0001 0000
 
@@ -17,12 +17,12 @@ hexdump /dev/input/event0
 
 struct input_event {
 
-	struct timeval time;
+	struct timeval time; //00ac 0000 b539 0007
 
-	__u16 type; 
+	__u16 type; 	//0001
 
-	__u16 code;
+	__u16 code;	//0026
 
-	__s32 value;
+	__s32 value;	//0001 0000
 
 };
